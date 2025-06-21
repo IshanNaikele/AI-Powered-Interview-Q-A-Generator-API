@@ -256,7 +256,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👨‍💻 Author
 
 **Your Name**
-- GitHub: [Ishan Naikele](https://github.com/yourusername)
+- GitHub: [Ishan Naikele](https://github.com/IshanNaikele)
 - LinkedIn: [Ishan Naikele](https://www.linkedin.com/in/ishan-naikele-b759562b0/)
 - Email: ishannaikele23@gmail.com
 
