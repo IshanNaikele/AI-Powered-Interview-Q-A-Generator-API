@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Query, File, UploadFile, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from ai_engine import generate_qa_pairs, generate_qa_pairs_from_resume
+from ai_engine import generate_qa_pairs, generate_qa_pairs_from_resume,generate_qa_pairs_from_job_and_resume
 from resume_parser import extract_resume_text
 import logging
 
@@ -140,6 +140,75 @@ async def generate_questions_from_resume(file: UploadFile = File(...)):
         logger.error(f"Unexpected error processing resume '{file.filename}': {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error occurred")
 
+@app.post("/generate_questions_from_job_and_resume")
+async def generate_questions_from_job_and_resume(role: str = Query(
+        ..., 
+        description="Job role (e.g., Software Engineer, Data Scientist)",
+        min_length=1,
+        max_length=100,
+        example="Software Engineer"
+    ),file: UploadFile = File(...)):
+    """
+    Generate 5 interview questions (3 technical + 2 HR) from an uploaded resume and role.
+    Supports PDF, DOCX, and TXT formats.
+    """
+    try:
+        role = role.strip()
+        if not role:
+            raise HTTPException(status_code=400, detail="Role cannot be empty")
+        if len(role) < 2:
+            raise HTTPException(status_code=400, detail="Role must be at least 2 characters long")
+        
+        if not file.filename:
+            raise HTTPException(status_code=400, detail="No file uploaded")
+        
+         
+
+        file_extension = file.filename.split('.')[-1].lower()
+        allowed_extensions = ['pdf', 'docx', 'txt']
+
+        if file_extension not in allowed_extensions:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported file type. Allowed: {', '.join(allowed_extensions)}"
+            )
+
+        logger.info(f"Processing resume file: {file.filename}")
+        resume_text = extract_resume_text(file.file, file.filename)
+
+        if not resume_text or len(resume_text.strip()) < 50:
+            raise HTTPException(
+                status_code=400,
+                detail="Resume text is too short or empty. Please upload a valid resume."
+            )
+
+        logger.info(f"Generating Q&A for role='{role}' from resume='{file.filename}'")
+
+        qa_pairs = generate_qa_pairs_from_job_and_resume(role,resume_text)
+
+        if not qa_pairs or not isinstance(qa_pairs, list):
+            logger.error(f"Invalid output from resume generation: {qa_pairs}")
+            raise HTTPException(status_code=500, detail="Failed to generate valid questions  in valid Format")
+
+         
+        logger.info(f"Successfully generated {len(qa_pairs)} questions from resume")
+
+        return {
+            "filename": file.filename,
+            "role":role,
+            "questions_and_answers": qa_pairs,
+            "total_questions": len(qa_pairs),
+            "status": "success",
+            "type": "resume + Job Role"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error processing resume '{file.filename}': {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error occurred")
+    
+
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
     """Custom handler for 404 Not Found."""
@@ -152,6 +221,7 @@ async def not_found_handler(request: Request, exc):
                 "/health",
                 "/generate_questions",
                 "/generate_questions_from_resume"
+                "/generate_questions_from_job_and_resume"
             ]
         }
     )

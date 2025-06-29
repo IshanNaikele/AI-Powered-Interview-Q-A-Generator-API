@@ -59,16 +59,57 @@ Requirements:
 - Output should be ONLY a valid JSON list of objects, with this exact structure:
 
 [
-  {{
-    "question": "Your question here",
-    "answer": "The answer here"
-  }}
+    {{
+        "question": "...",
+        "answer": "..."
+    }},
+    {{
+        "question": "...",
+        "answer": "..."
+    }},
+    {{
+        "question": "...",
+        "answer": "..."
+    }},
+    {{
+        "question": "...",
+        "answer": "..."
+    }},
+    {{
+        "question": "...",
+        "answer": "..."
+    }}
 ]
 
 Resume Content:
 {resume_text}
 
 Only return the JSON list. No explanations or formatting.
+"""
+
+def generate_combined_prompt(role: str, resume_text: str) -> str:
+    return f"""
+You are an expert interviewer.
+
+Generate exactly 5 realistic interview questions and answers for the candidate using BOTH the job role and resume content.
+
+Requirements:
+- 3 questions should be technical (based on resume + role)
+- 2 questions should be HR/personal
+- Return ONLY valid JSON in the format below:
+
+[
+  {{
+    "question": "Your question here",
+    "answer": "Your answer here"
+  }},
+  ...
+]
+
+Job Role: {role}
+
+Resume Content:
+{resume_text}
 """
 
 def extract_json_from_response(text: str) -> str:
@@ -81,6 +122,27 @@ def extract_json_from_response(text: str) -> str:
         return json_match.group(0)
     
     return text.strip()
+
+def generate_qa_pairs_from_job_and_resume(role:str,resume_text:str):
+    """Uses Gemini to generate Q&A from job role + resume"""
+    prompt = generate_combined_prompt(role, resume_text)
+    print("Generating Q&A from combined role + resume prompt")
+
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content(prompt)
+        
+        result_text = response.text.strip()
+        json_text = extract_json_from_response(result_text)
+        qa_pairs = json.loads(json_text)
+
+        if not isinstance(qa_pairs, list) or len(qa_pairs) != 5:
+            return [{"question": "Invalid response format", "answer": "Expected 5 Q&A pairs"}]
+
+        return qa_pairs
+
+    except Exception as e:
+        return [{"question": "Error occurred", "answer": str(e)}]
 
 def generate_qa_pairs(role: str) -> List[Dict[str, str]]:
     """Generate Q&A pairs for job role using Ollama"""
