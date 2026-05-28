@@ -253,20 +253,4 @@ echo $GEMINI_API_KEY
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 👨‍💻 Author
-
-**Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
-- Email: your.email@example.com
-
-## 🙏 Acknowledgments
-
-- [Ollama](https://ollama.ai) for local LLM infrastructure
-- [Google Gemini](https://ai.google.dev) for advanced AI capabilities
-- [FastAPI](https://fastapi.tiangolo.com) for the excellent web framework
-- [Streamlit](https://streamlit.io) for rapid UI development
-
----
-
-⭐ **Star this repository if you found it helpful!**
+ 
